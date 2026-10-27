@@ -1,0 +1,155 @@
+---
+// Small generative thumbnails for project tiles. Deterministic, so builds are reproducible.
+interface Props {
+  kind: string;
+}
+const { kind } = Astro.props;
+const W = 160;
+const H = 90;
+
+function rng(seed: number) {
+  return () => {
+    seed = (seed * 1664525 + 1013904223) % 4294967296;
+    return seed / 4294967296;
+  };
+}
+const r = rng(kind.length * 977 + kind.charCodeAt(0));
+
+// lulc: a coarse classified raster.
+const cells = Array.from({ length: 16 * 9 }, (_, i) => {
+  const x = i % 16, y = Math.floor(i / 16);
+  const v = Math.sin(x / 3 + r()) + Math.cos(y / 2.5 + x / 6) + r() * 0.8;
+  return { x, y, c: v > 1.2 ? 0 : v > 0.4 ? 1 : v > -0.4 ? 2 : 3 };
+});
+
+// roads: a jittered polyline network.
+const roads = [
+  [[0, 62], [40, 55], [80, 48], [120, 30], [160, 22]],
+  [[30, 0], [38, 30], [40, 55], [52, 90]],
+  [[80, 48], [96, 70], [104, 90]],
+  [[120, 30], [128, 0]],
+  [[0, 20], [38, 30]],
+].map((line) => line.map(([x, y]) => `${x + (r() - 0.5) * 4},${y + (r() - 0.5) * 4}`).join(' '));
+
+// canopy: tree-height profile.
+const trees = Array.from({ length: 32 }, (_, i) => ({ x: i * 5 + 2, h: 18 + Math.abs(Math.sin(i / 3.2)) * 40 + r() * 16 }));
+
+// graph: a hub skill with companion skills around it.
+const nodes = Array.from({ length: 9 }, (_, i) => {
+  const a = (i / 9) * Math.PI * 2 - Math.PI / 2;
+  return { x: 80 + Math.cos(a) * 52, y: 45 + Math.sin(a) * 30 };
+});
+---
+
+<svg class={`glyph ${kind}`} viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
+  {
+    kind === 'lulc' &&
+      cells.map((c) => (
+        <rect x={c.x * 10} y={c.y * 10} width="10" height="10" class={`k${c.c}`} />
+      ))
+  }
+
+  {
+    kind === 'roads' && (
+      <g>
+        {Array.from({ length: 16 }, (_, i) => <line x1={i * 10} x2={i * 10} y1="0" y2={H} class="px" />)}
+        {Array.from({ length: 9 }, (_, i) => <line y1={i * 10} y2={i * 10} x1="0" x2={W} class="px" />)}
+        {roads.map((p) => <polyline points={p} pathLength="1" class="road" />)}
+      </g>
+    )
+  }
+
+  {
+    kind === 'canopy' && (
+      <g>
+        {[20, 40, 60].map((y) => <line x1="0" x2={W} y1={H - y} y2={H - y} class="px" />)}
+        {trees.map((t) => <rect x={t.x} y={H - t.h} width="3.4" height={t.h} class="tree" />)}
+        <polyline points={trees.map((t) => `${t.x + 1.7},${H - t.h - 3}`).join(' ')} class="chm" />
+      </g>
+    )
+  }
+
+  {
+    kind === 'flood' && (
+      <g>
+        <rect x="0" y="0" width={W / 2} height={H} class="pre" />
+        <rect x={W / 2} y="0" width={W / 2} height={H} class="post" />
+        <path d={`M0 52 Q20 44 40 52 T80 52 L80 ${H} L0 ${H}Z`} class="water" />
+        <path d={`M80 30 Q100 22 120 32 T160 30 L160 ${H} L80 ${H}Z`} class="water flooded" />
+        <line x1="80" x2="80" y1="0" y2={H} class="split" />
+        <text x="4" y="10">t₀</text>
+        <text x="84" y="10">t₁</text>
+      </g>
+    )
+  }
+
+  {
+    kind === 'graph' && (
+      <g>
+        {nodes.map((n) => <line x1="80" y1="45" x2={n.x} y2={n.y} class="edge" />)}
+        {nodes.map((n) => <circle cx={n.x} cy={n.y} r="3.2" class="node" />)}
+        <circle cx="80" cy="45" r="8" class="hub" />
+      </g>
+    )
+  }
+</svg>
+
+<style>
+  .glyph {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: var(--bg);
+  }
+
+  .k0 { fill: var(--accent-2); }
+  .k1 { fill: var(--accent); }
+  .k2 { fill: var(--muted); opacity: 0.45; }
+  .k3 { fill: var(--ink); opacity: 0.12; }
+
+  .px {
+    stroke: var(--line);
+    stroke-width: 0.5;
+  }
+
+  .road {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+  }
+
+  .tree {
+    fill: var(--accent-2);
+    opacity: 0.55;
+  }
+
+  .chm {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.2;
+  }
+
+  .pre { fill: var(--surface); }
+  .post { fill: var(--surface); }
+  .water { fill: var(--accent-2); opacity: 0.55; }
+  .flooded { fill: var(--accent); opacity: 0.7; }
+  .split { stroke: var(--ink); stroke-width: 0.6; stroke-dasharray: 2 2; }
+
+  text {
+    font-family: var(--font-mono);
+    font-size: 7px;
+    fill: var(--muted);
+  }
+
+  .edge {
+    stroke: var(--muted);
+    stroke-width: 0.6;
+  }
+
+  .node { fill: var(--accent-2); }
+  .hub { fill: var(--accent); }
+</style>

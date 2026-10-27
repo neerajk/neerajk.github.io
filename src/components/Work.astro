@@ -1,0 +1,275 @@
+---
+// Experience and education, opened by an "acquisition coverage" chart (like a sensor's archive timeline).
+import { experience, education } from '../data/cv';
+
+const now = new Date();
+const nowYear = now.getUTCFullYear() + now.getUTCMonth() / 12;
+
+// "MM/YYYY" → decimal year; a bare "YYYY" is read as the start of that year,
+// or the middle of it when it closes a range.
+function toYear(s: string, isEnd: boolean): number {
+  const t = s.trim();
+  if (/present/i.test(t)) return nowYear;
+  const mm = t.match(/^(\d{2})\/(\d{4})$/);
+  if (mm) return Number(mm[2]) + (Number(mm[1]) - 1) / 12 + (isEnd ? 1 / 12 : 0);
+  return Number(t) + (isEnd ? 0.5 : 0);
+}
+
+function months(from: string, to: string): string {
+  const m = Math.round((toYear(to, true) - toYear(from, false)) * 12);
+  const y = Math.floor(m / 12);
+  return [y ? `${y} y` : '', m % 12 ? `${m % 12} m` : ''].filter(Boolean).join(' ');
+}
+
+const rows = [
+  ...experience.map((e) => ({ label: e.short, kind: 'work', a: toYear(e.from, false), b: toYear(e.to, true) })),
+  ...education.map((e) => {
+    const [from, to] = e.when.split('–');
+    return { label: e.short, kind: 'edu', a: toYear(from, false), b: toYear(to, true) };
+  }),
+].sort((p, q) => q.a - p.a);
+
+const start = Math.min(...rows.map((r) => r.a));
+const y0 = Math.floor(start);
+const y1 = Math.ceil(nowYear) + 1;
+const pct = (y: number) => ((y - y0) / (y1 - y0)) * 100;
+const years = Array.from({ length: y1 - y0 + 1 }, (_, i) => y0 + i);
+---
+
+<section id="work">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="idx">02</span>
+      <h2>Acquisitions</h2>
+      <span class="rule"></span>
+      <span class="note">Coverage {y0}–{Math.floor(nowYear)}</span>
+    </div>
+
+    <figure class="coverage reveal" aria-label="Timeline of work and study">
+      <div class="axis mono" aria-hidden="true">
+        {years.map((y) => <span style={`left:${pct(y)}%`}>{String(y).slice(2)}</span>)}
+      </div>
+      {
+        rows.map((r) => (
+          <div class="row">
+            <span class="label">{r.label}</span>
+            <span class="track">
+              {years.map((y) => <i style={`left:${pct(y)}%`} />)}
+              <b class={r.kind} style={`left:${pct(r.a)}%;width:${Math.max(0.8, pct(r.b) - pct(r.a))}%`} />
+            </span>
+          </div>
+        ))
+      }
+      <figcaption class="mono">
+        <span><b class="work"></b>Work</span>
+        <span><b class="edu"></b>Study</span>
+      </figcaption>
+    </figure>
+
+    <div class="list">
+      {
+        experience.map((e) => (
+          <article class="item reveal">
+            <div class="when mono">
+              <span>{e.from} → {e.to}</span>
+              <span class="muted">{months(e.from, e.to)}</span>
+            </div>
+            <div>
+              <h3>{e.title}</h3>
+              <p class="org">
+                {e.org} <span class="muted">· {e.place}</span>
+              </p>
+              <ul>
+                {e.points.map((p) => (
+                  <li>{p}</li>
+                ))}
+              </ul>
+            </div>
+          </article>
+        ))
+      }
+    </div>
+
+    <h3 class="sub mono">Education</h3>
+    <div class="list">
+      {
+        education.map((e) => (
+          <article class="item reveal">
+            <div class="when mono">
+              <span>{e.when}</span>
+            </div>
+            <div>
+              <h3>{e.degree}</h3>
+              {e.orgs.map((o) => (
+                <p class="org">{o}</p>
+              ))}
+            </div>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .coverage {
+    margin: 0 0 56px;
+    padding: 28px 20px 16px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+  }
+
+  .axis {
+    position: relative;
+    height: 18px;
+    margin-left: 190px;
+    color: var(--muted);
+    font-size: 0.68rem;
+  }
+
+  .axis span {
+    position: absolute;
+    transform: translateX(-50%);
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 190px 1fr;
+    align-items: center;
+    height: 26px;
+  }
+
+  .label {
+    font-size: 0.85rem;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 12px;
+  }
+
+  .track {
+    position: relative;
+    height: 100%;
+  }
+
+  .track i {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--line);
+  }
+
+  .track b {
+    position: absolute;
+    top: 8px;
+    height: 10px;
+    transform-origin: left;
+    transform: scaleX(0);
+    transition: transform 1s cubic-bezier(0.6, 0, 0.3, 1);
+  }
+
+  .coverage.in .track b {
+    transform: scaleX(1);
+  }
+
+  b.work {
+    background: var(--accent);
+  }
+
+  b.edu {
+    background: repeating-linear-gradient(45deg, var(--accent-2) 0 3px, transparent 3px 6px);
+    border: 1px solid var(--accent-2);
+  }
+
+  figcaption {
+    display: flex;
+    gap: 20px;
+    margin-top: 14px;
+    color: var(--muted);
+  }
+
+  figcaption span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  figcaption b {
+    display: block;
+    width: 18px;
+    height: 10px;
+  }
+
+  .list {
+    border-top: 1px solid var(--line);
+  }
+
+  .item {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 24px;
+    padding: 28px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .when {
+    display: grid;
+    align-content: start;
+    gap: 4px;
+  }
+
+  .when span:first-child {
+    color: var(--accent);
+  }
+
+  h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 1.7rem;
+    line-height: 1.15;
+  }
+
+  .org {
+    margin: 4px 0 0;
+  }
+
+  ul {
+    margin: 14px 0 0;
+    padding-left: 18px;
+  }
+
+  li {
+    margin-bottom: 6px;
+  }
+
+  li::marker {
+    color: var(--accent);
+  }
+
+  .sub {
+    margin: 56px 0 16px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 400;
+  }
+
+  @media (max-width: 720px) {
+    .item {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .row {
+      grid-template-columns: 110px 1fr;
+    }
+    .axis {
+      margin-left: 110px;
+    }
+    .coverage {
+      padding: 24px 12px 12px;
+    }
+  }
+</style>

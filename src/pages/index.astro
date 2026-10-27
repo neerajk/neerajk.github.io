@@ -1,0 +1,42 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import Hero from '../components/Hero.astro';
+import GroundTrack from '../components/GroundTrack.astro';
+import Work from '../components/Work.astro';
+import Projects from '../components/Projects.astro';
+import Bands from '../components/Bands.astro';
+import Contact from '../components/Contact.astro';
+import { profile } from '../data/cv';
+---
+
+<Base
+  title={`${profile.name} — ${profile.role}`}
+  description={`${profile.name}: ${profile.role}. Remote sensing, computer vision and foundation models for Earth observation.`}
+>
+  <Header />
+  <main>
+    <Hero />
+    <GroundTrack />
+    <Work />
+    <Projects />
+    <Bands />
+    <Contact />
+  </main>
+</Base>
+
+<script>
+  // Fade sections in as they scroll into view.
+  const io = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          e.target.classList.add('in');
+          io.unobserve(e.target);
+        }
+      });
+    },
+    { threshold: 0.15 },
+  );
+  document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+</script>

@@ -1,0 +1,71 @@
+---
+import { profile } from '../data/cv';
+const year = new Date().getUTCFullYear();
+---
+
+<section id="contact">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="idx">05</span>
+      <h2>Downlink</h2>
+      <span class="rule"></span>
+      <span class="note">Open to GeoAI roles &amp; collaborations</span>
+    </div>
+
+    <p class="big reveal">
+      Have imagery, a hard mapping problem or a model that won't generalise?
+      <a href={`mailto:${profile.email}`}>{profile.email}</a>
+    </p>
+
+    <ul class="links mono">
+      <li><a href={profile.github} rel="me">GitHub ↗</a></li>
+      <li><a href={profile.linkedin} rel="me">LinkedIn ↗</a></li>
+      <li><a href={profile.cv} download>CV (PDF) ↓</a></li>
+    </ul>
+  </div>
+
+  <footer class="wrap mono">
+    <span>© {year} {profile.name}</span>
+    <span>Built with Astro · Hosted on GitHub Pages · Press 1–5 to switch bands</span>
+  </footer>
+</section>
+
+<style>
+  .big {
+    margin: 0;
+    max-width: 22ch;
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5.5vw, 3.8rem);
+    line-height: 1.08;
+  }
+
+  .big a {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 0.55em;
+    color: var(--accent);
+    word-break: break-all;
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    list-style: none;
+    margin: 40px 0 0;
+    padding: 0;
+  }
+
+  footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: clamp(64px, 10vw, 120px);
+    padding-top: 20px;
+    padding-bottom: 32px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.7rem;
+  }
+</style>

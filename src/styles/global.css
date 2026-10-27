@@ -1,0 +1,248 @@
+/* Every colour comes from the active "band" (data-band on <html>).
+   rgb = true colour, nir = false colour, sar = radar backscatter,
+   tir = thermal, pan = panchromatic (the light theme). */
+
+:root,
+:root[data-band='rgb'] {
+  --bg: #0f1311;
+  --surface: #161b18;
+  --ink: #ece7da;
+  --muted: #9b9b8e;
+  --line: rgba(236, 231, 218, 0.12);
+  --accent: #d6b26e;
+  --accent-2: #7fb08a;
+  --grain: 0.07;
+  color-scheme: dark;
+}
+
+:root[data-band='nir'] {
+  --bg: #140b0d;
+  --surface: #1e1114;
+  --ink: #f4e7e7;
+  --muted: #b39699;
+  --line: rgba(244, 231, 231, 0.13);
+  --accent: #ff3b5c;
+  --accent-2: #63d2ff;
+  --grain: 0.07;
+  color-scheme: dark;
+}
+
+:root[data-band='sar'] {
+  --bg: #070707;
+  --surface: #111111;
+  --ink: #e8e8e8;
+  --muted: #8d8d8d;
+  --line: rgba(255, 255, 255, 0.13);
+  --accent: #ffffff;
+  --accent-2: #a3a3a3;
+  --grain: 0.18;
+  color-scheme: dark;
+}
+
+:root[data-band='tir'] {
+  --bg: #0c0716;
+  --surface: #160d23;
+  --ink: #f7ecdd;
+  --muted: #a898b3;
+  --line: rgba(247, 236, 221, 0.12);
+  --accent: #ffb020;
+  --accent-2: #ef4f6e;
+  --grain: 0.07;
+  color-scheme: dark;
+}
+
+:root[data-band='pan'] {
+  --bg: #f1eee6;
+  --surface: #e7e3d8;
+  --ink: #17181a;
+  --muted: #5c5c57;
+  --line: rgba(23, 24, 26, 0.14);
+  --accent: #b4441c;
+  --accent-2: #2e5f8a;
+  --grain: 0.05;
+  color-scheme: light;
+}
+
+:root {
+  --font-display: 'Instrument Serif', Georgia, serif;
+  --font-body: 'Inter Tight', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --max: 1120px;
+  --gutter: clamp(16px, 4vw, 40px);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.5s ease, color 0.5s ease;
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: var(--accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+/* Speckle / sensor noise over everything; strongest in SAR mode. */
+.grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  opacity: var(--grain);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+  transition: opacity 0.5s ease;
+}
+
+.wrap {
+  width: 100%;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+section {
+  padding: clamp(64px, 10vw, 120px) 0 0;
+}
+
+/* Section header: "02 — Acquisitions" with a hairline rule. */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.section-head .idx {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--accent);
+}
+
+.section-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.section-head .rule {
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+  align-self: center;
+}
+
+.section-head .note {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.chip {
+  display: inline-block;
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Reveal-on-scroll; JS adds .in when an element enters the viewport. */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+
+@media (max-width: 640px) {
+  body {
+    font-size: 16px;
+  }
+  .section-head .note {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}

@@ -1,0 +1,156 @@
+---
+import { profile } from '../data/cv';
+import PixelObservatory from './PixelObservatory.astro';
+
+const [first, ...rest] = profile.name.split(' ');
+---
+
+<section class="hero" id="top">
+  <div class="wrap grid">
+    <div class="copy">
+      <h1 class="scan">
+        <span class="ink">{first}<br /><em>{rest.join(' ')}</em></span>
+      </h1>
+
+      <p class="role">
+        <strong>{profile.role}</strong>
+        {profile.tags.map((t) => <span> · {t}</span>)}
+      </p>
+
+      <p class="summary">{profile.summary}</p>
+
+      <div class="cta">
+        <a class="btn primary" href={profile.cv} download>Download CV</a>
+        <a class="btn" href={profile.github} rel="me">GitHub</a>
+        <a class="btn" href={profile.linkedin} rel="me">LinkedIn</a>
+        <a class="btn" href={`mailto:${profile.email}`}>Email</a>
+      </div>
+    </div>
+
+    <div class="tile">
+      <PixelObservatory />
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    padding: clamp(40px, 8vw, 96px) 0 0;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    gap: clamp(32px, 6vw, 72px);
+    align-items: center;
+  }
+
+  h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(3.6rem, 11vw, 8rem);
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+  }
+
+  h1 em {
+    color: var(--accent);
+  }
+
+  /* Pushbroom reveal: the name is "acquired" line by line, top to bottom. */
+  .scan {
+    position: relative;
+  }
+
+  .ink {
+    display: block;
+    animation: acquire 1.6s cubic-bezier(0.6, 0, 0.3, 1) both;
+  }
+
+  .scan::after {
+    content: '';
+    position: absolute;
+    left: -2%;
+    right: -2%;
+    height: 2px;
+    background: var(--accent);
+    box-shadow: 0 0 18px 2px var(--accent);
+    animation: sweep 1.6s cubic-bezier(0.6, 0, 0.3, 1) both;
+  }
+
+  @keyframes acquire {
+    from {
+      clip-path: inset(0 0 100% 0);
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+
+  @keyframes sweep {
+    from {
+      top: 0;
+      opacity: 1;
+    }
+    90% {
+      opacity: 1;
+    }
+    to {
+      top: 100%;
+      opacity: 0;
+    }
+  }
+
+  .role {
+    margin: 28px 0 0;
+    color: var(--muted);
+  }
+
+  .role strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .summary {
+    max-width: 56ch;
+    margin: 16px 0 0;
+  }
+
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 32px;
+  }
+
+  .btn {
+    padding: 9px 18px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .btn:hover {
+    border-color: var(--accent);
+  }
+
+  .btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg);
+  }
+
+  .btn.primary:hover {
+    color: var(--bg);
+    filter: brightness(1.08);
+  }
+
+  @media (max-width: 860px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

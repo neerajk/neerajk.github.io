@@ -1,0 +1,6 @@
+numpy
+pillow
+pyproj
+pystac-client
+planetary-computer
+odc-stac

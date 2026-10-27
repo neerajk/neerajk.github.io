@@ -1,0 +1,276 @@
+---
+// Career path drawn as a satellite ground track over a Natural Earth land basemap,
+// in Plate Carrée (EPSG:4326), with a sun-synchronous orbit and the stations.
+import { stations } from '../data/cv';
+import { land } from '../data/land';
+
+const px = (lon: number) => (lon + 180) * 2;
+const py = (lat: number) => (90 - lat) * 2;
+const VIEW = { x: 100, y: 36, w: 480, h: 160 }; // lon -130…110, lat 72…-8
+
+// Label placement for the crowded Indian cluster.
+const labelAt: Record<string, { dx: number; dy: number; anchor: 'start' | 'end' }> = {
+  BLR: { dx: 6, dy: 8, anchor: 'start' },
+  BOM: { dx: -6, dy: 3, anchor: 'end' },
+  HYD: { dx: 6, dy: 3, anchor: 'start' },
+  DEL: { dx: -6, dy: 5, anchor: 'end' },
+  DDN: { dx: 6, dy: -3, anchor: 'start' },
+  ENS: { dx: 6, dy: -4, anchor: 'start' },
+  VMN: { dx: -6, dy: 3, anchor: 'end' },
+  NYC: { dx: 6, dy: 4, anchor: 'start' },
+};
+
+const pts = stations.map((s) => ({ ...s, x: px(s.lon), y: py(s.lat), label: labelAt[s.id] }));
+
+// Curved hops between consecutive stations.
+const hops = pts.slice(1).map((b, i) => {
+  const a = pts[i];
+  const lift = Math.hypot(b.x - a.x, b.y - a.y) * 0.22;
+  const cx = (a.x + b.x) / 2;
+  const cy = (a.y + b.y) / 2 - lift;
+  return `M${a.x.toFixed(1)} ${a.y.toFixed(1)} Q${cx.toFixed(1)} ${cy.toFixed(1)} ${b.x.toFixed(1)} ${b.y.toFixed(1)}`;
+});
+
+// Two passes of a sun-synchronous orbit (i = 98.6°, ~25.2° westward shift per orbit).
+const inc = (98.6 * Math.PI) / 180;
+const orbit: string[] = [];
+let seg: string[] = [];
+let prevLon: number | null = null;
+for (let u = 0; u <= 720; u += 2) {
+  const r = (u * Math.PI) / 180;
+  const lat = (Math.asin(Math.sin(inc) * Math.sin(r)) * 180) / Math.PI;
+  let lon = (Math.atan2(Math.cos(inc) * Math.sin(r), Math.cos(r)) * 180) / Math.PI + 40 - 25.2 * (u / 360);
+  lon = ((((lon + 180) % 360) + 360) % 360) - 180;
+  if (prevLon !== null && Math.abs(lon - prevLon) > 180) {
+    orbit.push(seg.join(' '));
+    seg = [];
+  }
+  seg.push(`${seg.length ? 'L' : 'M'}${px(lon).toFixed(1)} ${py(lat).toFixed(1)}`);
+  prevLon = lon;
+}
+orbit.push(seg.join(' '));
+
+const lons = Array.from({ length: 25 }, (_, i) => -180 + i * 15);
+const lats = Array.from({ length: 13 }, (_, i) => -90 + i * 15);
+const last = pts[pts.length - 1];
+---
+
+<section id="track">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="idx">01</span>
+      <h2>Ground track</h2>
+      <span class="rule"></span>
+    </div>
+
+    <figure class="map reveal">
+      <svg viewBox={`${VIEW.x} ${VIEW.y} ${VIEW.w} ${VIEW.h}`} role="img" aria-labelledby="track-title">
+        <title id="track-title">Career path from Bengaluru to Enschede drawn on a world map</title>
+
+        <path class="land" d={land} />
+
+        <g class="grat">
+          {lons.map((l) => <line x1={px(l)} x2={px(l)} y1="0" y2="360" class={l === 0 ? 'major' : ''} />)}
+          {lats.map((l) => <line x1="0" x2="720" y1={py(l)} y2={py(l)} class={l === 0 ? 'major' : ''} />)}
+        </g>
+
+        <g class="ticks">
+          {lons.filter((l) => l >= -120 && l <= 105 && l % 30 === 0).map((l) => (
+            <text x={px(l) + 1.5} y={VIEW.y + VIEW.h - 2}>{Math.abs(l)}°{l < 0 ? 'W' : l > 0 ? 'E' : ''}</text>
+          ))}
+          {lats.filter((l) => l > -8 && l < 72 && l % 30 === 0).map((l) => (
+            <text x={VIEW.x + 2} y={py(l) - 1.5}>{l}°{l > 0 ? 'N' : ''}</text>
+          ))}
+        </g>
+
+        <g class="orbit">{orbit.map((d) => <path d={d} />)}</g>
+
+        <g class="hops">
+          {hops.map((d, i) => <path d={d} pathLength="1" style={`--i:${i}`} />)}
+        </g>
+
+        <g class="stations">
+          {pts.map((p) => (
+            <g class="st" data-id={p.id}>
+              <circle class="halo" cx={p.x} cy={p.y} r="6" />
+              <circle cx={p.x} cy={p.y} r="2.2" />
+              <text x={p.x + p.label.dx} y={p.y + p.label.dy} text-anchor={p.label.anchor}>{p.id}</text>
+              <title>{p.place} · {p.when} · {p.what}</title>
+            </g>
+          ))}
+          <circle class="pulse" cx={last.x} cy={last.y} r="3" />
+        </g>
+      </svg>
+    </figure>
+
+    <ol class="legend">
+      {pts.map((p, i) => (
+        <li class="reveal" data-id={p.id} tabindex="0">
+          <span class="mono n">{String(i + 1).padStart(2, '0')} · {p.id}</span>
+          <span class="place">{p.place}</span>
+          <span class="what muted">{p.when} · {p.what}</span>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<script>
+  // Highlight the matching station when a legend row is hovered or focused.
+  document.querySelectorAll<HTMLElement>('.legend li').forEach((li) => {
+    const st = document.querySelector(`.st[data-id="${li.dataset.id}"]`);
+    const on = () => st?.classList.add('hot');
+    const off = () => st?.classList.remove('hot');
+    li.addEventListener('pointerenter', on);
+    li.addEventListener('pointerleave', off);
+    li.addEventListener('focus', on);
+    li.addEventListener('blur', off);
+  });
+</script>
+
+<style>
+  .map {
+    margin: 0;
+    border: 1px solid var(--line);
+    background: var(--surface);
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .land {
+    fill: color-mix(in srgb, var(--ink) 9%, var(--surface));
+    stroke: color-mix(in srgb, var(--ink) 28%, transparent);
+    stroke-width: 0.35;
+    stroke-linejoin: round;
+    transition: fill 0.5s ease;
+  }
+
+  .grat line {
+    stroke: var(--line);
+    stroke-width: 0.3;
+  }
+
+  .grat line.major {
+    stroke: var(--muted);
+    stroke-opacity: 0.5;
+    stroke-dasharray: 2 2;
+  }
+
+  .ticks text {
+    font-family: var(--font-mono);
+    font-size: 4.5px;
+    fill: var(--muted);
+  }
+
+  .orbit path {
+    fill: none;
+    stroke: var(--accent-2);
+    stroke-width: 0.6;
+    stroke-dasharray: 1.5 2.5;
+    opacity: 0.7;
+    animation: drift 30s linear infinite;
+  }
+
+  @keyframes drift {
+    to {
+      stroke-dashoffset: -200;
+    }
+  }
+
+  .hops path {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 0.9;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    transition: stroke-dashoffset 1.1s ease;
+    transition-delay: calc(var(--i) * 0.35s);
+  }
+
+  .map.in .hops path {
+    stroke-dashoffset: 0;
+  }
+
+  .st circle {
+    fill: var(--accent);
+  }
+
+  .st .halo {
+    fill: var(--accent);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .st.hot .halo,
+  .st:hover .halo {
+    opacity: 0.25;
+  }
+
+  .st text {
+    font-family: var(--font-mono);
+    font-size: 6px;
+    fill: var(--ink);
+  }
+
+  .pulse {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 0.8;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: ping 2.4s ease-out infinite;
+  }
+
+  @keyframes ping {
+    from {
+      transform: scale(1);
+      opacity: 1;
+    }
+    to {
+      transform: scale(4);
+      opacity: 0;
+    }
+  }
+
+  .legend {
+    list-style: none;
+    margin: 24px 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+  }
+
+  .legend li {
+    display: grid;
+    align-content: start;
+    gap: 2px;
+    padding: 14px 16px;
+    background: var(--bg);
+    outline-offset: -2px;
+    transition: background-color 0.2s ease;
+  }
+
+  .legend li:hover,
+  .legend li:focus-visible {
+    background: var(--surface);
+  }
+
+  .legend .n {
+    color: var(--accent);
+  }
+
+  .legend .place {
+    font-weight: 500;
+  }
+
+  .legend .what {
+    font-size: 0.9rem;
+  }
+</style>

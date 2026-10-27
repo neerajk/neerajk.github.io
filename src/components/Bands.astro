@@ -1,0 +1,93 @@
+---
+// Skills laid out as spectral bands; bar length is the number of tools in each band.
+import { bands } from '../data/cv';
+const most = Math.max(...bands.map((b) => b.items.length));
+---
+
+<section id="bands">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="idx">04</span>
+      <h2>Spectral bands</h2>
+      <span class="rule"></span>
+      <span class="note">Skills · {bands.length} bands</span>
+    </div>
+
+    <div class="bands">
+      {
+        bands.map((b) => (
+          <div class="band reveal">
+            <div class="head">
+              <span class="mono code">{b.code}</span>
+              <span class="name">{b.name}</span>
+              <span class="bar" aria-hidden="true">
+                <i style={`width:${(b.items.length / most) * 100}%`} />
+              </span>
+            </div>
+            <div class="chips">
+              {b.items.map((s) => (
+                <span class="chip">{s}</span>
+              ))}
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .bands {
+    border-top: 1px solid var(--line);
+  }
+
+  .band {
+    display: grid;
+    grid-template-columns: minmax(0, 340px) 1fr;
+    gap: 24px;
+    padding: 22px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .head {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 4px 12px;
+    align-content: start;
+  }
+
+  .code {
+    color: var(--accent);
+    padding-top: 3px;
+  }
+
+  .name {
+    font-weight: 500;
+  }
+
+  .bar {
+    grid-column: 2;
+    height: 4px;
+    background: var(--line);
+  }
+
+  .bar i {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-2), var(--accent));
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-content: start;
+  }
+
+  @media (max-width: 720px) {
+    .band {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+  }
+</style>

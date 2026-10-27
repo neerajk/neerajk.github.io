@@ -1,0 +1,175 @@
+---
+// Sticky top bar: monogram, section links and the band switcher that recolours the whole site.
+const bands = [
+  { id: 'rgb', label: 'RGB', title: 'True colour (B4·B3·B2)' },
+  { id: 'nir', label: 'NIR', title: 'False colour (B8·B4·B3)' },
+  { id: 'sar', label: 'SAR', title: 'Radar backscatter (VV)' },
+  { id: 'tir', label: 'TIR', title: 'Thermal (B10)' },
+  { id: 'pan', label: 'PAN', title: 'Panchromatic (light)' },
+];
+const links = [
+  { href: '#track', label: 'Track' },
+  { href: '#work', label: 'Work' },
+  { href: '#projects', label: 'Projects' },
+  { href: '#bands', label: 'Skills' },
+  { href: '#contact', label: 'Contact' },
+];
+---
+
+<header class="bar">
+  <div class="wrap inner">
+    <a class="mark" href="#top" aria-label="Back to top">
+      <span class="dot" aria-hidden="true"></span>
+      <span class="mono">NK / GeoAI</span>
+    </a>
+
+    <nav aria-label="Sections">
+      {links.map((l) => <a class="mono" href={l.href}>{l.label}</a>)}
+    </nav>
+
+    <fieldset class="switch" aria-label="Spectral band (colour theme)">
+      <legend class="sr-only">Spectral band (colour theme)</legend>
+      {
+        bands.map((b, i) => (
+          <label title={`${b.title} — key ${i + 1}`}>
+            <input type="radio" name="band" value={b.id} />
+            <span class="mono">{b.label}</span>
+          </label>
+        ))
+      }
+    </fieldset>
+  </div>
+</header>
+
+<script>
+  const root = document.documentElement;
+  const radios = document.querySelectorAll<HTMLInputElement>('input[name="band"]');
+
+  function setBand(band: string) {
+    root.dataset.band = band;
+    radios.forEach((r) => (r.checked = r.value === band));
+    try {
+      localStorage.setItem('band', band);
+    } catch {}
+    window.dispatchEvent(new CustomEvent('bandchange', { detail: band }));
+  }
+
+  radios.forEach((r) => {
+    r.checked = r.value === root.dataset.band;
+    r.addEventListener('change', () => setBand(r.value));
+  });
+
+  // Keys 1–5 switch bands, unless the user is typing somewhere.
+  window.addEventListener('keydown', (e) => {
+    const t = e.target as HTMLElement;
+    if (e.metaKey || e.ctrlKey || e.altKey || t.closest('input, textarea, select')) return;
+    const r = radios[Number(e.key) - 1];
+    if (r) setBand(r.value);
+  });
+</script>
+
+<style>
+  .bar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    backdrop-filter: blur(10px);
+    background: color-mix(in srgb, var(--bg) 78%, transparent);
+    border-bottom: 1px solid var(--line);
+    transition: background-color 0.5s ease;
+  }
+
+  .inner {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    height: 56px;
+  }
+
+  .mark {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .dot {
+    width: 10px;
+    height: 10px;
+    background: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+
+  nav {
+    display: flex;
+    gap: 20px;
+    margin-left: auto;
+  }
+
+  nav a {
+    text-decoration: none;
+    color: var(--muted);
+  }
+
+  nav a:hover {
+    color: var(--ink);
+  }
+
+  .switch {
+    display: flex;
+    margin: 0;
+    padding: 2px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+  }
+
+  .switch label {
+    position: relative;
+    cursor: pointer;
+  }
+
+  .switch input {
+    position: absolute;
+    opacity: 0;
+    inset: 0;
+    cursor: pointer;
+  }
+
+  .switch span {
+    display: block;
+    padding: 4px 9px;
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: 0.7rem;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .switch input:checked + span {
+    background: var(--accent);
+    color: var(--bg);
+  }
+
+  .switch input:focus-visible + span {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 860px) {
+    nav {
+      display: none;
+    }
+    .switch {
+      margin-left: auto;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .mark .mono {
+      display: none;
+    }
+    .switch span {
+      padding: 4px 7px;
+    }
+  }
+</style>
